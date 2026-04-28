@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Any, Iterable, Mapping
 
 from loto_bot.backtest import BacktestResult
+from loto_bot.validation import ValidationResult
 
 
 def result_to_dict(
@@ -35,6 +36,28 @@ def result_to_dict(
         else "",
         "score": round(result.score, 6),
         "hit_counts": result.hit_counts,
+    }
+
+
+def validation_result_to_dict(result: ValidationResult) -> dict[str, Any]:
+    return {
+        "window": result.window_index,
+        "combination": list(result.combination),
+        "system": result.system.text,
+        "profile": result.profile_name,
+        "search_mode": result.search_mode,
+        "train_start": result.train_start.drawn_at.isoformat(sep=" "),
+        "train_end": result.train_end.drawn_at.isoformat(sep=" "),
+        "test_start": result.test_start.drawn_at.isoformat(sep=" "),
+        "test_end": result.test_end.drawn_at.isoformat(sep=" "),
+        "train_profit": round(result.train_result.profit, 2),
+        "train_roi": round(result.train_result.roi, 6),
+        "test_profit": round(result.test_result.profit, 2),
+        "test_roi": round(result.test_result.roi, 6),
+        "test_hit_rate_at_least_2": round(result.test_result.hit_rate_at_least_2, 6),
+        "test_longest_losing_streak": result.test_result.longest_losing_streak,
+        "test_total_cost": round(result.test_result.total_cost, 2),
+        "test_total_return": round(result.test_result.total_return, 2),
     }
 
 
@@ -74,6 +97,27 @@ def print_table(rows: list[Mapping[str, Any]], limit: int) -> None:
             f"{float(row['profit']):>12.2f}  {roi_pct:>9.2f}%  "
             f"{hit_pct:>8.2f}%  {int(row.get('longest_losing_streak', 0)):>8}  "
             f"{str(row.get('search_mode', 'exact')):<12}"
+        )
+
+
+def print_validation_table(rows: list[Mapping[str, Any]], limit: int) -> None:
+    if not rows:
+        print("No validation windows.")
+        return
+
+    print(
+        f"{'rank':>4}  {'win':>3}  {'system':<6}  {'numbers':<20}  "
+        f"{'test profit':>12}  {'test roi':>10}  {'2+ hit %':>9}  {'mode':<8}"
+    )
+    ordered = sorted(rows, key=lambda row: (-float(row["test_roi"]), -float(row["test_profit"])))
+    for index, row in enumerate(ordered[:limit], start=1):
+        numbers = " ".join(str(number) for number in row["combination"])
+        test_roi_pct = float(row["test_roi"]) * 100
+        hit_pct = float(row.get("test_hit_rate_at_least_2", 0.0)) * 100
+        print(
+            f"{index:>4}  {int(row['window']):>3}  {str(row['system']):<6}  {numbers:<20}  "
+            f"{float(row['test_profit']):>12.2f}  {test_roi_pct:>9.2f}%  "
+            f"{hit_pct:>8.2f}%  {str(row.get('search_mode', 'exact')):<8}"
         )
 
 

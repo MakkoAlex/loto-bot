@@ -28,6 +28,14 @@ python -m loto_bot.cli analyze --draws data/draws.json --system 3/5 --top 20 --c
 python -m loto_bot.cli systems --draws data/draws.json --systems 2/2 2/5 3/3 3/5 3/6 --top 20 --csv reports/best_systems.csv --json reports/best_systems.json
 ```
 
+## Validate A Pattern
+
+```powershell
+python -m loto_bot.cli validate --draws data/draws.json --system 3/3 --train-window 3000 --test-window 300 --candidates 3 --csv reports/validation_3_3.csv --json reports/validation_3_3.json
+```
+
+Validation trains on older draws, chooses the best historical candidates, then tests those exact combinations on the next future window. This is the main command for checking whether a pattern survives outside the period that found it.
+
 Small searches run exactly across numbers `1..80`. Very large searches automatically use a top-frequency pool, `14` numbers by default, so systems like `3/6` can finish locally. Increase `--max-combinations` or adjust `--pool-size` to control that tradeoff.
 
 ## Payout Defaults

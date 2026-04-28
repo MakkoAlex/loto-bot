@@ -52,3 +52,34 @@ def test_resolve_number_pool_uses_frequency_pool_for_three_number_searches() -> 
 
     assert pool == (1, 2, 3, 4, 5)
     assert search_mode == "top-5"
+
+
+def test_validate_command_runs_against_local_draw_cache(tmp_path) -> None:
+    draws_path = tmp_path / "draws.json"
+    draws = [
+        Draw(datetime(2026, 1, 1, 15, 0, 0), frozenset({1, 2, *range(10, 28)})),
+        Draw(datetime(2026, 1, 2, 15, 0, 0), frozenset({1, 2, *range(30, 48)})),
+        Draw(datetime(2026, 1, 3, 15, 0, 0), frozenset({1, *range(50, 69)})),
+        Draw(datetime(2026, 1, 4, 15, 0, 0), frozenset({1, 2, *range(10, 28)})),
+        Draw(datetime(2026, 1, 5, 15, 0, 0), frozenset(range(30, 50))),
+    ]
+    save_draws(draws, draws_path)
+
+    assert (
+        main(
+            [
+                "validate",
+                "--draws",
+                str(draws_path),
+                "--system",
+                "2/2",
+                "--train-window",
+                "3",
+                "--test-window",
+                "2",
+                "--candidates",
+                "1",
+            ]
+        )
+        == 0
+    )

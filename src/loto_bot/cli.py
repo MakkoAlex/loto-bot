@@ -10,7 +10,15 @@ from loto_bot.backtest import rank_combinations
 from loto_bot.fetcher import fetch_archive, load_draws, save_draws
 from loto_bot.models import MAX_NUMBER, MIN_NUMBER, Draw
 from loto_bot.payouts import DEFAULT_PROFILES, BettingSystem, PayoutProfile, parse_system
-from loto_bot.reporting import print_table, result_to_dict, write_csv, write_json
+from loto_bot.reporting import (
+    print_table,
+    print_validation_table,
+    result_to_dict,
+    validation_result_to_dict,
+    write_csv,
+    write_json,
+)
+from loto_bot.validation import walk_forward_validate
 
 DEFAULT_SYSTEMS = ["2/2", "2/5", "3/3", "3/5", "3/6"]
 EXACT_PICK_LIMIT = 2
@@ -45,6 +53,15 @@ def build_parser() -> argparse.ArgumentParser:
     add_analysis_arguments(systems_parser)
     systems_parser.add_argument("--systems", nargs="+", default=DEFAULT_SYSTEMS)
     systems_parser.set_defaults(func=run_systems)
+
+    validate_parser = subparsers.add_parser("validate", help="Walk-forward validation")
+    add_analysis_arguments(validate_parser)
+    validate_parser.add_argument("--system", required=True)
+    validate_parser.add_argument("--train-window", type=int, default=3000)
+    validate_parser.add_argument("--test-window", type=int, default=300)
+    validate_parser.add_argument("--step", type=int)
+    validate_parser.add_argument("--candidates", type=int, default=5)
+    validate_parser.set_defaults(func=run_validate)
 
     return parser
 
@@ -89,6 +106,28 @@ def run_systems(args: argparse.Namespace) -> int:
     rows.sort(key=lambda row: (-float(row["score"]), -float(row["roi"]), -float(row["profit"])))
     _write_outputs(rows, args)
     print_table(rows, args.top)
+    return 0
+
+
+def run_validate(args: argparse.Namespace) -> int:
+    draws = load_draws(args.draws)
+    system = parse_system(args.system)
+    profile = infer_profile(system)
+    results = walk_forward_validate(
+        draws=draws,
+        system=system,
+        profile=profile,
+        train_window=args.train_window,
+        test_window=args.test_window,
+        candidates=args.candidates,
+        step=args.step,
+        recent_window=args.recent_window,
+        max_combinations=args.max_combinations,
+        pool_size=args.pool_size,
+    )
+    rows = [validation_result_to_dict(result) for result in results]
+    _write_outputs(rows, args)
+    print_validation_table(rows, args.top)
     return 0
 
 
