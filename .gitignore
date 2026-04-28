@@ -4,6 +4,7 @@
 __pycache__/
 *.py[cod]
 .venv/
+*.egg-info/
 data/*.json
 reports/*.csv
 reports/*.json

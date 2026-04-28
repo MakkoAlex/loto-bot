@@ -1,0 +1,28 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "loto-bot"
+version = "0.1.0"
+description = "Historical analyzer for Loto Polonia betting systems"
+readme = "README.md"
+requires-python = ">=3.11"
+
+[project.scripts]
+loto-bot = "loto_bot.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
+markers = [
+    "unit: fast unit tests",
+    "integration: integration-style tests that avoid live network calls",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
